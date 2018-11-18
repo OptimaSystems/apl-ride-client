@@ -1,0 +1,7 @@
+:Namespace 
+  CaseCode←'On'
+  KeepHistory←'Off'
+  Open←''
+  ProjectSpace←'#.Ride'
+  StartUp←''
+:EndNamespace 

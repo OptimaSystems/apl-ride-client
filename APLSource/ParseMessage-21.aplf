@@ -1,0 +1,9 @@
+ ParseMessage←{
+     ⍺←⍬
+     0=l←256⊥4↑⍵:⍵ ⍺
+     l>≢⍵:⍵ ⍺
+     MAGIC≢4↑4↓⍵:∘∘∘ ⍝ RIDE magic number
+     json←8↓l↑⍵
+     msgs←⍺,⊂'UTF-8'⎕UCS json
+     msgs ∇ l↓⍵
+ }

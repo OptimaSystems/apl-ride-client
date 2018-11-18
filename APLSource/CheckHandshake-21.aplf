@@ -1,0 +1,11 @@
+ CheckHandshake←{
+ ⍝ ⍺ ←→ client
+ ⍝ ← ←→ 0 - all OK, 1 error
+     c←⍺
+     c.HandshakeDone:0
+     2>≢c.Messages:0
+     ok←∧/'SupportedProtocols=2' 'UsingProtocol=2'∊2↑c.Messages
+     ~c.HandshakeDone←ok:1
+     c.Messages↓⍨←2
+     0
+ }

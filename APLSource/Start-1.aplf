@@ -1,0 +1,13 @@
+ Start←{
+ ⍝ ⍺ ←→ client
+ ⍝ ⍵ ←→ 0
+     c←⍺
+     cmd←'dyalog.exe RIDE_INIT=SERVE:',c.Host,':',⍕c.Port
+     r←⎕CMD cmd''
+     r←DRC.Clt''c.Host c.Port'raw'
+     0≠⊃r:∘∘∘
+     c.Name←1⊃r
+     c.HandshakeDone←0
+     _←c SendMessage¨'SupportedProtocols=2' 'UsingProtocol=2' '["Identify",{"identity":1}]'
+     c MessageHandler&⍬
+ }

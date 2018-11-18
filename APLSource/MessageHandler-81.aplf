@@ -1,0 +1,16 @@
+ MessageHandler←{
+ ⍝ ⍺ ←→ client
+ ⍝ ⍵ ←→ buffer
+     c b←⍺ ⍵
+     r←DRC.Wait c.Name
+     rc nm evt dat←4↑r
+     evt←(rc=100)⊃evt'Timeout'
+     evt≡'BlockLast':DRC.Close c.Name
+     evt≡'Timeout':c ∇ b
+     evt≢'Block':∘∘∘
+     b,←dat
+     b msgs←ParseMessage b
+     c.Messages,←msgs
+     c CheckHandshake 0:
+     c ∇ b
+ }

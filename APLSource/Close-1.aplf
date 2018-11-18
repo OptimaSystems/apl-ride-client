@@ -1,0 +1,5 @@
+ Close←{
+ ⍝ ⍺ ←→ client
+ ⍝ ⍵ ←→ 0
+     ⍺ SendMessage'["Exit",{"code":0}]'
+ }

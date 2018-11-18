@@ -1,0 +1,6 @@
+ SendMessage←{
+     array←~(1=≢⍴⍵)∧(0=10|⎕DR ⍵)
+     p←'UTF-8'⎕UCS ⎕JSON⍣array⊢⍵
+     d←{⍵-256×128<⍵}(4/256)⊤8+≢p
+     DRC.Send ⍺.Name(d,MAGIC,p)
+ }
