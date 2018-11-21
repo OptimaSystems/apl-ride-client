@@ -24,8 +24,25 @@
       Port←GetPort
     ∇
 
+    ∇ unmake;r
+      :Access Private Instance
+      :Implements Destructor
+      Close
+    ∇
+
+    ∇ Close;r
+      :Access Public Instance
+      :If ~Proc.HasExited
+          r←SendMessage'["Exit",{"code":0}]'
+          ⎕DL 0.5
+      :AndIf ~Proc.HasExited
+          ⎕←'killing'
+          r←Proc.Kill
+      :EndIf
+    ∇
+
     ∇ r←GetPort
-      :Access Public Shared
+      :Access Private Shared
       r←PORT←PORT+1
     ∇
 
@@ -45,78 +62,85 @@
       MessageHandler&⍬
     ∇
 
-    ∇ {r}←Close
-      :Access Public Instance
-      r←SendMessage'["Exit",{"code":0}]'
-    ∇
 
       StopIf←{
           ⍵:
           _←(1+1⊃⎕LC)⎕STOP 1⊃⎕SI
       }
 
-    ∇ {r}←Edit(name body);m1;m2;m3;ns;z
+    ∇ {r}←Edit(name body);m1;m2;m3;ns;z;rc
       :Access Public Instance
       z←Execute')ED ',name
-      StopIf ¯1≡m1←WaitFor'OpenWindow'
+      StopIf ¯1=⊃rc m1←WaitFor'OpenWindow'
      
       ns←⎕NS''
       ns.win←m1.token
       ns.text←body
       ns.stop←⍬
       z←SendMessage'SaveChanges'ns
-      z←WaitFor'TaskDialog' 1
-      :If z≢¯1
+      rc z←WaitFor'TaskDialog' 1
+      :If rc=¯1
           ns←⎕NS''
           ns.token←z.token
           ns.index←100
           SendMessage'ReplyTaskDialog'ns
       :EndIf
      
-      StopIf ¯1≡m2←WaitFor'ReplySaveChanges'
+      StopIf ¯1=⊃rc m2←WaitFor'ReplySaveChanges'
       StopIf m2.err≠0
      
       ns←⎕NS''
       ns.win←m1.token
       z←SendMessage'CloseWindow'ns
-      m3←WaitFor'CloseWindow'
+      rc m3←WaitFor'CloseWindow'
       StopIf m3.win≢m1.token
       r←0
       ⍝
     ∇
 
-    ∇ {r}←WaitFor arg;e;en;i;t
+    ∇ {(rc m)}←WaitFor arg;e;en;i;t
       :Access Public Instance
-      e t←2↑(⊆arg),10
-      r←¯1
-      :While (t>0)∧r≡¯1
+      e t←2↑(⊆arg),10000
+      rc m←¯1 ⍬
+      :Repeat
           i←(en←⊃¨Messages)⍳⊂e
           :If i<≢en
-              r←i 1⊃Messages
+              m←i 1⊃Messages
+              rc←0
               Messages↓⍨←i+1
           :Else
-              t-←⎕DL 0.5
+              t-←1000×⎕DL 0.5⌊t÷1000
           :EndIf
-      :EndWhile
+      :Until (t≤0)∨(rc=0)
     ∇
 
-    ∇ {r}←WaitForPromptType arg;done;en;i;m;timeout;type
+    ∇ {r}←WaitForSessionOutput timeout;e;en;i;m;rc
       :Access Public Instance
-      type timeout←2↑arg,(≢arg)↓1 10
-      r←¯1
-      done←0
-      :While (timeout>0)∧~done
-          i←(en←⊃¨Messages)⍳⊂'SetPromptType'
-          :If i<≢en
-              m←i 1⊃Messages
-              Messages↓⍨←i+1
-              done←m.type=type
-          :Else
-              t-←⎕DL 0.5
+      r←''
+      :Repeat
+          rc m←WaitFor'AppendSessionOutput'timeout
+          :If rc=0
+              timeout←0
+              r,←m.result
           :EndIf
-      :EndWhile
+      :Until rc=¯1
+    ∇
+
+    ∇ {r}←WaitForPromptType arg;done;m;timeout;type;start;rc;rem
+      :Access Public Instance
+      type timeout←2↑arg,(≢arg)↓1 10000
+      r←¯1 ⍬
+      done←0
+      start←2⊃⎕AI
+      :Repeat
+          rc m←WaitFor'SetPromptType'rem
+          :If rc=0
+              done←m.type=type
+          :EndIf
+          rem←timeout-(2⊃⎕AI)-start
+      :Until (rem<0)∨done
       :If done
-          r←m
+          r←0 m
       :EndIf
     ∇
 
@@ -139,7 +163,6 @@
     ∇ {r}←MessageHandler b;dat;done;evt;msgs;nm;ok;pmsgs;rc
       done←0
       :Repeat
-     
           r←P.DRC.Wait Name
           rc nm evt dat←4↑r
           evt←(rc=100)⊃evt'Timeout'
