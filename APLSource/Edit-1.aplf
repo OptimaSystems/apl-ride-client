@@ -1,0 +1,29 @@
+ Edit←{
+     c←⍺
+     name body←⍵
+     _←c Execute')ED ',name
+     ¯1≡m1←c WaitFor'OpenWindow':∘∘∘
+
+     ns←⎕NS''
+     ns.win←m1.token
+     ns.text←body
+     ns.stop←⍬
+     _←c SendMessage'SaveChanges'ns
+     {
+         ⍵≡¯1:0
+         ns←⎕NS''
+         ns.token←⍵.token
+         ns.index←100
+         0⊣c SendMessage'ReplyTaskDialog'ns
+     }c WaitFor'TaskDialog' 1:∘∘∘
+
+     ¯1≡m2←c WaitFor'ReplySaveChanges':∘∘∘
+     m2.err≠0:∘∘∘
+
+     ns←⎕NS''
+     ns.win←m1.token
+     _←c SendMessage'CloseWindow'ns
+     m3←c WaitFor'CloseWindow'
+     m3.win≢m1.token:∘∘∘
+     0
+ }

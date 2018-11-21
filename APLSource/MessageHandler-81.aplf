@@ -10,7 +10,8 @@
      evt≢'Block':∘∘∘
      b,←dat
      b msgs←ParseMessage b
-     c.Messages,←msgs
+     pmsgs←⎕JSON⍣c.HandshakeDone¨msgs
+     c.Messages,←pmsgs
      c CheckHandshake 0:
      c ∇ b
  }
