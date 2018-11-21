@@ -1,0 +1,178 @@
+:Class Client
+    ⎕IO←0
+    ⎕ML←1
+
+    :Field Public Instance Proc←⍬
+    :Field Public Instance Host←''
+    :Field Public Instance Port
+    :Field Public Instance Messages←⍬
+    :Field Private Instance Name←''
+    :Field Private Instance HandshakeDone←0
+    :Field Private Instance P
+
+    :Field Private Shared MAGIC←82 73 68 69
+    :Field Private Shared PORT←4602
+
+    ∇ make;r
+      :Access Public Instance
+      :Implements Constructor
+      P←(⊃⊃⎕CLASS ⎕THIS).##
+      :If 0=P.⎕NC'DRC'
+          'DRC'P.⎕CY'conga'
+      :EndIf
+      r←DRC.Init''
+      Port←GetPort
+    ∇
+
+    ∇ r←GetPort
+      :Access Public Shared
+      r←PORT←PORT+1
+    ∇
+
+    ∇ Start;ride
+      :Access Public Instance
+      ride←'SERVE:',Host,':',⍕Port
+      Proc←⎕NEW P.APLProcess('' '' 0 ride)
+      ⎕DL 0.5
+      r←P.DRC.Clt''Host Port'raw'
+      :If 0≠⊃r
+          ∘∘∘
+      :EndIf
+      Name←1⊃r
+      HandshakeDone←0
+      SendMessage¨'SupportedProtocols=2' 'UsingProtocol=2' '["Identify",{"identity":1}]'
+      MessageHandler&⍬
+    ∇
+
+    ∇ {r}←Close
+      :Access Public Instance
+      r←SendMessage'["Exit",{"code":0}]'
+    ∇
+
+      StopIf←{
+          ⍵:
+          _←(1+1⊃⎕LC)⎕STOP 1⊃⎕SI
+      }
+
+    ∇ {r}←Edit(name body);m1;m2;m3;ns;z
+      :Access Public Instance
+      z←Execute')ED ',name
+      StopIf ¯1≡m1←WaitFor'OpenWindow'
+     
+      ns←⎕NS''
+      ns.win←m1.token
+      ns.text←body
+      ns.stop←⍬
+      z←SendMessage'SaveChanges'ns
+      z←WaitFor'TaskDialog' 1
+      :If z≢¯1
+          ns←⎕NS''
+          ns.token←z.token
+          ns.index←100
+          SendMessage'ReplyTaskDialog'ns
+      :EndIf
+     
+      StopIf ¯1≡m2←WaitFor'ReplySaveChanges'
+      StopIf m2.err≠0
+     
+      ns←⎕NS''
+      ns.win←m1.token
+      z←SendMessage'CloseWindow'ns
+      m3←WaitFor'CloseWindow'
+      StopIf m3.win≢m1.token
+      r←0
+      ⍝
+    ∇
+
+    ∇ {r}←WaitFor arg;e;en;i;t
+      :Access Public Instance
+      e t←2↑(⊆arg),10
+      r←¯1
+      :While (t>0)∧r≡¯1
+          i←(en←⊃¨Messages)⍳⊂e
+          :If i<≢en
+              r←i 1⊃Messages
+              Messages↓⍨←i+1
+          :Else
+              t-←⎕DL 0.5
+          :EndIf
+      :EndWhile
+    ∇
+
+    ∇ {r}←WaitForPromptType arg;done;en;i;m;timeout;type
+      :Access Public Instance
+      type timeout←2↑arg,(≢arg)↓1 10
+      r←¯1
+      done←0
+      :While (timeout>0)∧~done
+          i←(en←⊃¨Messages)⍳⊂'SetPromptType'
+          :If i<≢en
+              m←i 1⊃Messages
+              Messages↓⍨←i+1
+              done←m.type=type
+          :Else
+              t-←⎕DL 0.5
+          :EndIf
+      :EndWhile
+      :If done
+          r←m
+      :EndIf
+    ∇
+
+    ∇ {r}←Execute arg;m;trc;txt
+      :Access Public Instance
+      txt trc←2↑(⊆arg),0
+      m←⎕NS''
+      m.text←txt,⎕UCS 10
+      m.trace←trc⌷'false' 'true'
+      r←SendMessage'Execute'm
+    ∇
+
+    ∇ {r}←SendMessage m;array;d;p
+      array←~(1=≢⍴m)∧(0=10|⎕DR m)
+      p←'UTF-8'⎕UCS ⎕JSON⍣array⊢m
+      d←{⍵-256×128<⍵}(4/256)⊤8+≢p
+      r←P.DRC.Send Name(d,MAGIC,p)
+    ∇
+
+    ∇ {r}←MessageHandler b;dat;done;evt;msgs;nm;ok;pmsgs;rc
+      done←0
+      :Repeat
+     
+          r←P.DRC.Wait Name
+          rc nm evt dat←4↑r
+          evt←(rc=100)⊃evt'Timeout'
+          :Select evt
+          :Case 'BlockLast'
+              r←P.DRC.Close Name
+          :Case 'Timeout'
+     
+          :Case 'Block'
+              b,←dat
+              b msgs←ParseMessage b
+              pmsgs←⎕JSON⍣HandshakeDone¨msgs
+              Messages,←pmsgs
+              :If ~HandshakeDone
+              :AndIf 2≤≢Messages
+                  ok←∧/'SupportedProtocols=2' 'UsingProtocol=2'∊2↑Messages
+                  HandshakeDone←ok
+                  Messages↓⍨←2
+                  done←~ok
+              :EndIf
+          :Else
+              done←1
+          :EndSelect
+      :Until done
+    ∇
+
+      ParseMessage←{
+          ⍺←⍬
+          0=l←256⊥4↑⍵:⍵ ⍺
+          l>≢⍵:⍵ ⍺
+          MAGIC≢4↑4↓⍵:∘∘∘ ⍝ RIDE magic number
+          json←8↓l↑⍵
+          msgs←⍺,⊂'UTF-8'⎕UCS json
+          msgs ∇ l↓⍵
+      }
+
+:EndClass
