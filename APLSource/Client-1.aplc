@@ -64,8 +64,7 @@
 
 
       StopIf←{
-          ⍵:
-          _←(1+1⊃⎕LC)⎕STOP 1⊃⎕SI
+          ⍵:_←(1+1⊃⎕LC)⎕STOP 1⊃⎕SI
       }
 
     ∇ {r}←Edit(name body);m1;m2;m3;ns;z;rc
@@ -78,8 +77,8 @@
       ns.text←body
       ns.stop←⍬
       z←SendMessage'SaveChanges'ns
-      rc z←WaitFor'TaskDialog' 1
-      :If rc=¯1
+      rc z←WaitFor'TaskDialog' 1000
+      :If rc=0
           ns←⎕NS''
           ns.token←z.token
           ns.index←100
@@ -132,6 +131,7 @@
       r←¯1 ⍬
       done←0
       start←2⊃⎕AI
+      rem←timeout
       :Repeat
           rc m←WaitFor'SetPromptType'rem
           :If rc=0
