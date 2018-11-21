@@ -2,8 +2,9 @@
  ⍝ ⍺ ←→ client
  ⍝ ⍵ ←→ 0
      c←⍺
-     cmd←'dyalog.exe RIDE_INIT=SERVE:',c.Host,':',⍕c.Port
-     r←⎕CMD cmd''
+     ride←'SERVE:',c.Host,':',⍕c.Port
+     c.Proc←⎕NEW APLProcess('' '' 0 ride)
+     _←⎕DL 0.5
      r←DRC.Clt''c.Host c.Port'raw'
      0≠⊃r:∘∘∘
      c.Name←1⊃r
