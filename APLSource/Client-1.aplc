@@ -20,7 +20,7 @@
       :If 0=P.⎕NC'DRC'
           'DRC'P.⎕CY'conga'
       :EndIf
-      r←DRC.Init''
+      r←P.DRC.Init''
       Port←GetPort
     ∇
 
@@ -33,6 +33,7 @@
       :Access Public Instance
       ride←'SERVE:',Host,':',⍕Port
       Proc←⎕NEW P.APLProcess('' '' 0 ride)
+      Messages←⍬
       ⎕DL 0.5
       r←P.DRC.Clt''Host Port'raw'
       :If 0≠⊃r
