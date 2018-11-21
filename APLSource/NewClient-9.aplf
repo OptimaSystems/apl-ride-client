@@ -1,8 +1,0 @@
- NewClient←{
-     ⍺←⊃⎕RSI
-     c←⍺.⎕NS''
-     c.Host←''
-     c.Port←4502
-     c.Messages←⍬
-     c
- }

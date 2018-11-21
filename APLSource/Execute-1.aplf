@@ -1,8 +1,0 @@
- Execute←{
-     c←⍺
-     txt trc←2↑(⊆⍵),0
-     m←⎕NS''
-     m.text←txt,⎕UCS 10
-     m.trace←trc⌷'false' 'true'
-     1:r←c SendMessage'Execute'm
- }
